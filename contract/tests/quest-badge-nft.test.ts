@@ -111,3 +111,58 @@ describe("Quest Badge NFT Contract", () => {
         )
       );
     });
+
+    it("increments protocol badge count", () => {
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("stackingdao")],
+        wallet1
+      );
+
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-protocol-badge-count",
+        [Cl.stringAscii("stackingdao")],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.uint(1));
+    });
+
+    it("allows different users to mint same protocol badge", () => {
+      const mint1 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("granite")],
+        wallet1
+      );
+      expect(mint1.result).toBeOk(Cl.uint(1));
+
+      const mint2 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("granite")],
+        wallet2
+      );
+      expect(mint2.result).toBeOk(Cl.uint(2));
+    });
+
+    it("allows user to mint badges for different protocols", () => {
+      const mint1 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+      expect(mint1.result).toBeOk(Cl.uint(1));
+
+      const mint2 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("arkadiko")],
+        wallet1
+      );
+      expect(mint2.result).toBeOk(Cl.uint(2));
+    });
+  });
