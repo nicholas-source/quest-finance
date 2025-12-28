@@ -126,3 +126,42 @@
         (ok token-id)
     )
 )
+
+;; Read-only functions
+
+;; Get badge information
+(define-read-only (get-badge-info (token-id uint))
+    (ok (map-get? token-info token-id))
+)
+
+;; Get user's badge for a specific protocol
+(define-read-only (get-user-badge
+        (user principal)
+        (protocol (string-ascii 50))
+    )
+    (ok (map-get? user-protocol-badge {
+        user: user,
+        protocol: protocol,
+    }))
+)
+
+;; Check if user has completed a protocol quest
+(define-read-only (has-completed-protocol
+        (user principal)
+        (protocol (string-ascii 50))
+    )
+    (ok (is-some (map-get? user-protocol-badge {
+        user: user,
+        protocol: protocol,
+    })))
+)
+
+;; Get total badges minted for a protocol
+(define-read-only (get-protocol-badge-count (protocol (string-ascii 50)))
+    (ok (default-to u0 (map-get? protocol-badge-count protocol)))
+)
+
+;; Get protocol info
+(define-read-only (get-protocol-info (protocol (string-ascii 50)))
+    (ok (map-get? valid-protocols protocol))
+)
