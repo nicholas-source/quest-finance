@@ -166,3 +166,54 @@ describe("Quest Badge NFT Contract", () => {
       expect(mint2.result).toBeOk(Cl.uint(2));
     });
   });
+
+  describe("Duplicate Prevention", () => {
+    it("prevents user from minting same protocol badge twice", () => {
+      // First mint succeeds
+      const mint1 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("hermetica")],
+        wallet1
+      );
+      expect(mint1.result).toBeOk(Cl.uint(1));
+
+      // Second mint fails with ERR_ALREADY_CLAIMED
+      const mint2 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("hermetica")],
+        wallet1
+      );
+      expect(mint2.result).toBeErr(Cl.uint(104)); // ERR_ALREADY_CLAIMED
+    });
+
+    it("tracks user-protocol badge mapping", () => {
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-user-badge",
+        [Cl.principal(wallet1), Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.some(Cl.uint(1)));
+    });
+
+    it("returns none for non-existent user-protocol badge", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-user-badge",
+        [Cl.principal(wallet1), Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.none());
+    });
+  });
