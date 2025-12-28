@@ -537,3 +537,107 @@ describe("Quest Badge NFT Contract", () => {
         wallet1
       );
       expect(lastId.result).toBeOk(Cl.uint(5));
+
+      // Verify protocol counts
+      const zestCount = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-protocol-badge-count",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+      expect(zestCount.result).toBeOk(Cl.uint(2));
+    });
+
+    it("maintains correct state after failed minting attempts", () => {
+      // Successful mint
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("arkadiko")],
+        wallet1
+      );
+
+      // Failed duplicate mint
+      const failed = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("arkadiko")],
+        wallet1
+      );
+      expect(failed.result).toBeErr(Cl.uint(104));
+
+      // Verify state wasn't corrupted
+      const lastId = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-last-token-id",
+        [],
+        wallet1
+      );
+      expect(lastId.result).toBeOk(Cl.uint(1)); // Still 1, not 2
+
+      const count = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-protocol-badge-count",
+        [Cl.stringAscii("arkadiko")],
+        wallet1
+      );
+      expect(count.result).toBeOk(Cl.uint(1)); // Still 1, not 2
+    });
+
+    it("handles all 5 default protocols for single user", () => {
+      const protocols = ["zest", "stackingdao", "granite", "hermetica", "arkadiko"];
+
+      protocols.forEach((protocol, index) => {
+        const mint = simnet.callPublicFn(
+          "quest-badge-nft",
+          "mint-badge",
+          [Cl.stringAscii(protocol)],
+          wallet1
+        );
+        expect(mint.result).toBeOk(Cl.uint(index + 1));
+
+        // Verify completion
+        const completed = simnet.callReadOnlyFn(
+          "quest-badge-nft",
+          "has-completed-protocol",
+          [Cl.principal(wallet1), Cl.stringAscii(protocol)],
+          wallet1
+        );
+        expect(completed.result).toBeOk(Cl.bool(true));
+      });
+
+      // Verify total count
+      const lastId = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-last-token-id",
+        [],
+        wallet1
+      );
+      expect(lastId.result).toBeOk(Cl.uint(5));
+    });
+  });
+
+  describe("Token URI Behavior", () => {
+    it("returns base URI for any token when URI is set", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-token-uri",
+        [Cl.uint(1)],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.some(Cl.stringAscii("https://stxfinance.xyz/api/metadata/")));
+    });
+
+    it("returns base URI even for non-existent token", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-token-uri",
+        [Cl.uint(999)],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.some(Cl.stringAscii("https://stxfinance.xyz/api/metadata/")));
+    });
+  });
+});
