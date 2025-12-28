@@ -381,3 +381,58 @@ describe("Quest Badge NFT Contract", () => {
         )
       );
     });
+
+    it("allows owner to update existing protocol", () => {
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "set-protocol",
+        [Cl.stringAscii("zest"), Cl.bool(true), Cl.uint(75)],
+        deployer
+      );
+
+      expect(result).toBeOk(Cl.bool(true));
+
+      // Verify XP was updated
+      const info = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-protocol-info",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      expect(info.result).toBeOk(
+        Cl.some(
+          Cl.tuple({
+            active: Cl.bool(true),
+            "xp-reward": Cl.uint(75)
+          })
+        )
+      );
+    });
+
+    it("allows owner to deactivate protocol", () => {
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "set-protocol",
+        [Cl.stringAscii("arkadiko"), Cl.bool(false), Cl.uint(55)],
+        deployer
+      );
+
+      expect(result).toBeOk(Cl.bool(true));
+
+      const info = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-protocol-info",
+        [Cl.stringAscii("arkadiko")],
+        wallet1
+      );
+
+      expect(info.result).toBeOk(
+        Cl.some(
+          Cl.tuple({
+            active: Cl.bool(false),
+            "xp-reward": Cl.uint(55)
+          })
+        )
+      );
+    });
