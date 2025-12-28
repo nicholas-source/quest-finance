@@ -1,0 +1,7 @@
+[network]
+name = "mainnet"
+stacks_node_rpc_address = "https://api.hiro.so"
+deployment_fee_rate = 10
+
+[accounts.deployer]
+mnemonic = "emerge say angry earth window milk plastic fuel addict electric develop ribbon someone vintage finish crouch dizzy elevator market jeans master document decline dash"
