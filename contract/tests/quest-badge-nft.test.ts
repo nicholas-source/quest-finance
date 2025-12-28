@@ -483,3 +483,57 @@ describe("Quest Badge NFT Contract", () => {
       expect(result).toBeErr(Cl.uint(100)); // ERR_OWNER_ONLY
     });
   });
+
+  describe("Integration Scenarios", () => {
+    it("handles multiple users minting multiple protocols", () => {
+      // Wallet 1 mints zest and granite
+      const w1m1 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+      expect(w1m1.result).toBeOk(Cl.uint(1));
+
+      const w1m2 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("granite")],
+        wallet1
+      );
+      expect(w1m2.result).toBeOk(Cl.uint(2));
+
+      // Wallet 2 mints stackingdao and zest
+      const w2m1 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("stackingdao")],
+        wallet2
+      );
+      expect(w2m1.result).toBeOk(Cl.uint(3));
+
+      const w2m2 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet2
+      );
+      expect(w2m2.result).toBeOk(Cl.uint(4));
+
+      // Wallet 3 mints hermetica
+      const w3m1 = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("hermetica")],
+        wallet3
+      );
+      expect(w3m1.result).toBeOk(Cl.uint(5));
+
+      // Verify last token ID
+      const lastId = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-last-token-id",
+        [],
+        wallet1
+      );
+      expect(lastId.result).toBeOk(Cl.uint(5));
