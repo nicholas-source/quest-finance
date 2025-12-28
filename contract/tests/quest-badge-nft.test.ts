@@ -217,3 +217,55 @@ describe("Quest Badge NFT Contract", () => {
       expect(result).toBeOk(Cl.none());
     });
   });
+
+  describe("Invalid Protocol Handling", () => {
+    it("rejects minting for non-existent protocol", () => {
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("invalid-protocol")],
+        wallet1
+      );
+
+      expect(result).toBeErr(Cl.uint(105)); // ERR_INVALID_QUEST
+    });
+
+    it("rejects minting for inactive protocol", () => {
+      // First deactivate a protocol
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "set-protocol",
+        [Cl.stringAscii("zest"), Cl.bool(false), Cl.uint(50)],
+        deployer
+      );
+
+      // Try to mint
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      expect(result).toBeErr(Cl.uint(105)); // ERR_INVALID_QUEST
+    });
+  });
+
+  describe("NFT Ownership", () => {
+    it("correctly assigns NFT ownership", () => {
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("stackingdao")],
+        wallet1
+      );
+
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-owner",
+        [Cl.uint(1)],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.some(Cl.principal(wallet1)));
+    });
