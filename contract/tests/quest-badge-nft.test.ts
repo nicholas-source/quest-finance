@@ -55,3 +55,59 @@ describe("Quest Badge NFT Contract", () => {
       expect(result).toBeOk(Cl.uint(0));
     });
   });
+
+  describe("Badge Minting", () => {
+    it("allows user to mint badge for valid protocol", () => {
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.uint(1));
+    });
+
+    it("increments last-token-id after minting", () => {
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-last-token-id",
+        [],
+        wallet1
+      );
+      expect(result).toBeOk(Cl.uint(1));
+    });
+
+    it("stores badge info correctly", () => {
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("zest")],
+        wallet1
+      );
+
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-badge-info",
+        [Cl.uint(1)],
+        wallet1
+      );
+
+      expect(result).toBeOk(
+        Cl.some(
+          Cl.tuple({
+            protocol: Cl.stringAscii("zest"),
+            owner: Cl.principal(wallet1),
+            "completion-date": Cl.uint(simnet.blockHeight),
+            "xp-earned": Cl.uint(50)
+          })
+        )
+      );
+    });
