@@ -436,3 +436,50 @@ describe("Quest Badge NFT Contract", () => {
         )
       );
     });
+
+    it("prevents non-owner from managing protocols", () => {
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "set-protocol",
+        [Cl.stringAscii("zest"), Cl.bool(true), Cl.uint(100)],
+        wallet1
+      );
+
+      expect(result).toBeErr(Cl.uint(100)); // ERR_OWNER_ONLY
+    });
+  });
+
+  describe("Admin Functions - Token URI", () => {
+    it("allows owner to set base token URI", () => {
+      const newUri = "https://newdomain.com/metadata/";
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "set-base-token-uri",
+        [Cl.stringAscii(newUri)],
+        deployer
+      );
+
+      expect(result).toBeOk(Cl.bool(true));
+
+      // Verify URI was updated
+      const uri = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-token-uri",
+        [Cl.uint(1)],
+        wallet1
+      );
+
+      expect(uri.result).toBeOk(Cl.some(Cl.stringAscii(newUri)));
+    });
+
+    it("prevents non-owner from setting token URI", () => {
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "set-base-token-uri",
+        [Cl.stringAscii("https://hacker.com/")],
+        wallet1
+      );
+
+      expect(result).toBeErr(Cl.uint(100)); // ERR_OWNER_ONLY
+    });
+  });
