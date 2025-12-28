@@ -39,3 +39,45 @@
     }
     uint
 )
+
+;; Track total badges minted per protocol
+(define-map protocol-badge-count
+    (string-ascii 50)
+    uint
+)
+
+;; Valid protocol names
+(define-map valid-protocols
+    (string-ascii 50)
+    {
+        active: bool,
+        xp-reward: uint,
+    }
+)
+
+;; SIP-009 required functions
+
+(define-read-only (get-last-token-id)
+    (ok (var-get last-token-id))
+)
+
+(define-read-only (get-token-uri (token-id uint))
+    (if (> (len (var-get base-token-uri)) u0)
+        (ok (some (var-get base-token-uri)))
+        (ok none)
+    )
+)
+
+(define-read-only (get-owner (token-id uint))
+    (ok (nft-get-owner? quest-badge token-id))
+)
+
+;; Transfer function - Soul-bound badges cannot be transferred
+;; They represent personal achievement and cannot be traded
+(define-public (transfer
+        (token-id uint)
+        (sender principal)
+        (recipient principal)
+    )
+    ERR_UNAUTHORIZED
+)
