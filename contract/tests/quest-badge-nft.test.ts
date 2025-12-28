@@ -269,3 +269,55 @@ describe("Quest Badge NFT Contract", () => {
 
       expect(result).toBeOk(Cl.some(Cl.principal(wallet1)));
     });
+
+    it("returns none for non-existent token", () => {
+      const { result } = simnet.callReadOnlyFn(
+        "quest-badge-nft",
+        "get-owner",
+        [Cl.uint(999)],
+        wallet1
+      );
+
+      expect(result).toBeOk(Cl.none());
+    });
+  });
+
+  describe("Soul-Bound Transfer Prevention", () => {
+    it("prevents transfer of badges (soul-bound)", () => {
+      // Mint badge first
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("granite")],
+        wallet1
+      );
+
+      // Try to transfer
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "transfer",
+        [Cl.uint(1), Cl.principal(wallet1), Cl.principal(wallet2)],
+        wallet1
+      );
+
+      expect(result).toBeErr(Cl.uint(103)); // ERR_UNAUTHORIZED
+    });
+
+    it("prevents transfer even by contract owner", () => {
+      simnet.callPublicFn(
+        "quest-badge-nft",
+        "mint-badge",
+        [Cl.stringAscii("arkadiko")],
+        wallet1
+      );
+
+      const { result } = simnet.callPublicFn(
+        "quest-badge-nft",
+        "transfer",
+        [Cl.uint(1), Cl.principal(wallet1), Cl.principal(wallet2)],
+        deployer
+      );
+
+      expect(result).toBeErr(Cl.uint(103)); // ERR_UNAUTHORIZED
+    });
+  });
