@@ -81,3 +81,48 @@
     )
     ERR_UNAUTHORIZED
 )
+
+;; Core minting function
+
+;; Mint NFT badge for quest completion
+;; Anyone can call this to mint their own badge after completing a quest
+(define-public (mint-badge (protocol (string-ascii 50)))
+    (let (
+            (token-id (+ (var-get last-token-id) u1))
+            (protocol-info (unwrap! (map-get? valid-protocols protocol) ERR_INVALID_QUEST))
+            (current-count (default-to u0 (map-get? protocol-badge-count protocol)))
+        )
+        ;; Check if protocol is active
+        (asserts! (get active protocol-info) ERR_INVALID_QUEST)
+
+        ;; Check if user already has badge for this protocol
+        (asserts!
+            (is-none (map-get? user-protocol-badge {
+                user: tx-sender,
+                protocol: protocol,
+            }))
+            ERR_ALREADY_CLAIMED
+        )
+
+        ;; Mint the NFT to the caller
+        (try! (nft-mint? quest-badge token-id tx-sender))
+
+        ;; Update data
+        (var-set last-token-id token-id)
+        (map-set token-info token-id {
+            protocol: protocol,
+            owner: tx-sender,
+            completion-date: stacks-block-height,
+            xp-earned: (get xp-reward protocol-info),
+        })
+        (map-set user-protocol-badge {
+            user: tx-sender,
+            protocol: protocol,
+        }
+            token-id
+        )
+        (map-set protocol-badge-count protocol (+ current-count u1))
+
+        (ok token-id)
+    )
+)
