@@ -165,3 +165,54 @@
 (define-read-only (get-protocol-info (protocol (string-ascii 50)))
     (ok (map-get? valid-protocols protocol))
 )
+
+;; Admin functions
+
+;; Initialize or update a protocol
+;; #[allow(unchecked_data)]
+(define-public (set-protocol
+        (protocol (string-ascii 50))
+        (active bool)
+        (xp-reward uint)
+    )
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_OWNER_ONLY)
+        (map-set valid-protocols protocol {
+            active: active,
+            xp-reward: xp-reward,
+        })
+        (ok true)
+    )
+)
+
+;; Set base token URI
+;; #[allow(unchecked_data)]
+(define-public (set-base-token-uri (uri (string-ascii 256)))
+    (begin
+        (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_OWNER_ONLY)
+        (var-set base-token-uri uri)
+        (ok true)
+    )
+)
+
+;; Initialize default protocols 
+(map-set valid-protocols "zest" {
+    active: true,
+    xp-reward: u50,
+})
+(map-set valid-protocols "stackingdao" {
+    active: true,
+    xp-reward: u60,
+})
+(map-set valid-protocols "granite" {
+    active: true,
+    xp-reward: u70,
+})
+(map-set valid-protocols "hermetica" {
+    active: true,
+    xp-reward: u65,
+})
+(map-set valid-protocols "arkadiko" {
+    active: true,
+    xp-reward: u55,
+})
